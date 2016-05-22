@@ -236,8 +236,6 @@ func (r *RequestScannerSubscription) write(b *bytes.Buffer) error {
 type RequestMarketData struct {
 	id int64
 	Contract
-	ComboLegs         []ComboLeg `when:"SecurityType" cond:"not" value:"BAG"`
-	Comp              *UnderComp
 	GenericTickList   string
 	Snapshot          bool
 	MarketDataOptions []TagValue
@@ -269,10 +267,10 @@ func (r *RequestMarketData) write(b *bytes.Buffer) error {
 		return err
 	}
 	if r.Contract.SecurityType == bagSecType {
-		if err := writeInt(b, int64(len(r.ComboLegs))); err != nil {
+		if err := writeInt(b, int64(len(r.Contract.ComboLegs))); err != nil {
 			return err
 		}
-		for _, cl := range r.ComboLegs {
+		for _, cl := range r.Contract.ComboLegs {
 			if err := (writeMapSlice{
 				{fct: writeInt, val: cl.ContractID},
 				{fct: writeInt, val: cl.Ratio},
@@ -283,12 +281,12 @@ func (r *RequestMarketData) write(b *bytes.Buffer) error {
 			}
 		}
 	}
-	if r.Comp != nil {
+	if r.Contract.UnderComp != nil {
 		if err := (writeMapSlice{
 			{fct: writeBool, val: true},
-			{fct: writeInt, val: r.Comp.ContractID},
-			{fct: writeFloat, val: r.Comp.Delta},
-			{fct: writeFloat, val: r.Comp.Price},
+			{fct: writeInt, val: r.Contract.UnderComp.ContractID},
+			{fct: writeFloat, val: r.Contract.UnderComp.Delta},
+			{fct: writeFloat, val: r.Contract.UnderComp.Price},
 		}).Dump(b); err != nil {
 			return err
 		}
